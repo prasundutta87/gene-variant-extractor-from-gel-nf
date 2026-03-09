@@ -37,7 +37,7 @@ process RUN_GENE {
 
     script:
     """
-    bash ${projectDir}/scripts/get_gene_specific_variants_AggV3.sh \
+        bash get_gene_specific_variants_AggV3.sh \
         ${row_index} \
         ${genes_bed} \
         ${biallelic_shards} \
