@@ -16,4 +16,7 @@ The workflow:
 
 All computational tools (bcftools, bedtools, samtools, R, duckplyr) are encapsulated within a Docker image to ensure reproducibility and portability.
 
+This pipeline is intended for systematic gene-level variant characterization and supports integration of annotation and QC metrics into structured tabular outputs suitable for downstream analysis.
+
+
 
