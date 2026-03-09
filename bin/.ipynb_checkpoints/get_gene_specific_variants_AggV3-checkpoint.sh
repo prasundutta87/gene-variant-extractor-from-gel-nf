@@ -62,7 +62,7 @@ done
 rm temp_${ROW_INDEX}.bed VCF_genotypes_${ROW_INDEX}.bed VCF_annotations_${ROW_INDEX}.bed VCF_siteQC_${ROW_INDEX}.bed
 
 #Combine variants with their annotations
-Rscript scripts/combine_variant_using_duckplyr.R $PWD "$gene"
+Rscript combine_variant_using_duckplyr.R $PWD "$gene"
 echo "all steps successfully over for $gene"
 
 
