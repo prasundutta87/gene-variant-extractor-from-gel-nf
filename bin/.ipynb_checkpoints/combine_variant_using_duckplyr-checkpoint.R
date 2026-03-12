@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+
 suppressMessages(suppressWarnings(library(tidyverse)))
 suppressMessages(suppressWarnings(library(argparser)))
 suppressMessages(suppressWarnings(library(duckplyr)))
