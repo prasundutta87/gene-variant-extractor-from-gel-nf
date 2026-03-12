@@ -14,7 +14,7 @@ gene=`cat "$gene_bed_file"|cut -f4`
 region_start=$((start+1))
 
 #Add variant file header
-printf "sample\tvariant_id\tFILTER\tgenotype\twhole_cohort_AC\twhole_cohort_AN\twhole_cohort_AF" > "$gene"_genotypes.tsv
+printf "sample\tvariant_id\tFILTER\tgenotype\n" > "$gene"_genotypes.tsv
 
 #Add siteQC file header
 printf "variant_id\tGEL_cohort_AC\tGEL_cohort_AN\tGEL_cohort_AF\tAC_Hom\tAC_Het\tAC_Hemi\tmedianDP\tmedianGQ\tABratio\tmissingness_rate\n" > "$gene"_siteQC.tsv
