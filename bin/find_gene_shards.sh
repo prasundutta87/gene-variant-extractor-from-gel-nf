@@ -22,7 +22,7 @@ bedtools intersect -wo -a temp_${ROW_INDEX}.bed -b "${SITEQC_SHARDS}" > VCF_site
 
 # Extract only the VCF paths from column-13
 cat VCF_genotypes_${ROW_INDEX}.bed | cut -f13 > ${gene}_biallelic_genotype_shards.txt
-cat VCF_annotations_${ROW_INDEX}.bed | cut -f13 > ${gene}_annotation_shards.txt
+cat VCF_annotations_${ROW_INDEX}.bed | cut -f13 > ${gene}_anno_shards.txt
 cat VCF_siteQC_${ROW_INDEX}.bed |cut -f13 > ${gene}_siteqc_shards.txt
 
 rm VCF_genotypes_${ROW_INDEX}.bed VCF_annotations_${ROW_INDEX}.bed VCF_siteQC_${ROW_INDEX}.bed
