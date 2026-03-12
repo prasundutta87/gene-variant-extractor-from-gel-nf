@@ -10,13 +10,18 @@ workflow {
     
     row_indices = Channel.of(1,2,3,4,5,6)
 
-    shard_results =FIND_SHARDS(
+    biallelic_ch, anno_ch, siteqc_ch, bed_ch = FIND_SHARDS(
         row_indices,
         file(params.genes_bed),
         file(params.biallelic_genotype_shards),
         file(params.anno_shards),
         file(params.siteqc_shards)
     )
+
+shard_results = biallelic_ch
+    .combine(anno_ch)
+    .combine(siteqc_ch)
+    .combine(bed_ch)
 
      staged_inputs = shard_results.map {  biallelic_genotype_shards, anno_shards, siteqc_shards, gene_bed_file ->
 
