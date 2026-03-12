@@ -14,11 +14,11 @@ process FIND_SHARDS {
             path(siteqc_shards)
             
 
-    output:
-        path "*_biallelic_genotype_shards.txt"
-        path "*_anno_shards.txt"
-        path "*_siteqc_shards.txt"
-        path "temp_*.bed"
+   output:
+    path "*_biallelic_genotype_shards.txt", emit: biallelic
+    path "*_anno_shards.txt", emit: anno
+    path "*_siteqc_shards.txt", emit: siteqc
+    path "temp_*.bed", emit: bed
 
     script:
     """
@@ -61,13 +61,18 @@ workflow {
     
     row_indices = Channel.of(1,2,3,4,5,6)
 
-    biallelic_ch, anno_ch, siteqc_ch, bed_ch = FIND_SHARDS(
-        row_indices,
-        file(params.genes_bed),
-        file(params.biallelic_genotype_shards),
-        file(params.anno_shards),
-        file(params.siteqc_shards)
-    )
+    shard_proc = FIND_SHARDS(
+    row_indices,
+    file(params.genes_bed),
+    file(params.biallelic_genotype_shards),
+    file(params.anno_shards),
+    file(params.siteqc_shards)
+)
+
+biallelic_ch = shard_proc.out.biallelic
+anno_ch      = shard_proc.out.anno
+siteqc_ch    = shard_proc.out.siteqc
+bed_ch       = shard_proc.out.bed
 
 shard_results = biallelic_ch
     .combine(anno_ch)
