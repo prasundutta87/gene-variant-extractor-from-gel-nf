@@ -61,7 +61,7 @@ process RUN_GENE {
 
 workflow {
 
-    row_indices = Channel.of(1,2,3,4,5,6)
+    row_indices = Channel.of(6)
 
     shard_results = FIND_SHARDS(
         row_indices,
