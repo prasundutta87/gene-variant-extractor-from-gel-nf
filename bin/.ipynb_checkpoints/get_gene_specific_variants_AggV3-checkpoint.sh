@@ -2,7 +2,7 @@
 
 genotype_vcfs="$1"
 annotation_vcfs="$2"
-siteqc_shard_vcf="$3"
+siteqc_vcfs="$3"
 gene_bed_file="$4"
 
 chrom=`cat "$gene_bed_file"|cut -f1`
@@ -20,7 +20,7 @@ printf "sample\tvariant_id\tFILTER\tgenotype\twhole_cohort_AC\twhole_cohort_AN\t
 printf "variant_id\tGEL_cohort_AC\tGEL_cohort_AN\tGEL_cohort_AF\tAC_Hom\tAC_Het\tAC_Hemi\tmedianDP\tmedianGQ\tABratio\tmissingness_rate\n" > "$gene"_siteQC.tsv
 
 #Add annotation file header
-first_vcf_line=$(cat "$annotation_shard_list" |head -n 1)
+first_vcf_line=$(cat "$annotation_vcfs" |head -n 1)
 printf "variant_id\t$(bcftools +split-vep -l "$first_vcf_line" -l | cut -f 2 | paste -s -d '\t')\n" > "$gene"_annotation.tsv
 
 #Loop through multiple lines if a longer gene is present across two VCF chunks
@@ -43,7 +43,7 @@ while read line;do
     -i "SYMBOL == \"$gene\" && (MANE_SELECT != \".\" || CANONICAL == \"YES\")" \
 	-a CSQ -A tab \
 	-f '%CHROM\_%POS\_%REF\_%ALT\t%CSQ\n' >>"$gene"_annotation.tsv
-done "$annotation_vcfs"
+done < "$annotation_vcfs"
 
 #Combine variants with their annotations
 Rscript combine_variant_using_duckplyr.R "$PWD" "$gene"
