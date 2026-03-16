@@ -1,3 +1,5 @@
+main.nf
+
 nextflow.enable.dsl=2
 
 params.genes_bed                  = null
@@ -15,7 +17,7 @@ process FIND_SHARDS {
         path anno_shards
         path siteqc_shards
 
-     output:
+    output:
         path "*_biallelic_genotype_shards.txt", emit: biallelic
         path "*_anno_shards.txt", emit: anno
         path "*_siteqc_shards.txt", emit: siteqc
@@ -40,11 +42,11 @@ process RUN_GENE {
     publishDir "results", mode: 'copy'
 
     input:
-        tuple path(biallelic_txt),
-              path(anno_txt),
-              path(siteqc_txt),
-              path(gene_bed_file)
-              path(staged_shards)
+        path(biallelic_txt)
+        path(anno_txt)
+        path(siteqc_txt)
+        path(gene_bed_file)
+        path(staged_shards)
 
     output:
         path "*.tsv"
@@ -67,7 +69,7 @@ workflow {
     FIND_SHARDS(
         row_indices,
         file(params.genes_bed),
-        file(params.biallelic_genotype_shards),\
+        file(params.biallelic_genotype_shards),
         file(params.anno_shards),
         file(params.siteqc_shards)
     )
@@ -93,10 +95,10 @@ workflow {
     shard_results = ch_biallelic.concat(ch_anno).concat(ch_siteqc)
 
     RUN_GENE(
-        tuple(FIND_SHARDS.out.biallelic,
-            FIND_SHARDS.out.anno,
-            FIND_SHARDS.out.siteqc,
-            FIND_SHARDS.out.gene_bed),
+        FIND_SHARDS.out.biallelic,
+        FIND_SHARDS.out.anno,
+        FIND_SHARDS.out.siteqc,
+        FIND_SHARDS.out.gene_bed,
         shard_results.unique().collect()
     )
 }
