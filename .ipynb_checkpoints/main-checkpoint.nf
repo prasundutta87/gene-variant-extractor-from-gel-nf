@@ -1,5 +1,3 @@
-main.nf
-
 nextflow.enable.dsl=2
 
 params.genes_bed                  = null
