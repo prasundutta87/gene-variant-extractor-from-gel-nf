@@ -42,7 +42,7 @@ process RUN_GENE {
         path(anno_txt)
         path(siteqc_txt)
         path(gene_bed_file)
-        path(staged_shards, stageAs: 'shards/${file.name}')
+        path(staged_shards, stageAs: "shards/*")
 
     output:
         path "*.tsv"
