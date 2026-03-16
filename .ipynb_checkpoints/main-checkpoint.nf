@@ -73,19 +73,19 @@ workflow {
         .ifEmpty { exit 1, "Cannot find file : ${FIND_SHARDS.out.biallelic}" }
         .splitText { it.trim() }
         .filter { it != "" }
-        .map { file(it, stageAs: it) }
+        .map { file(it, stageAs: "${it.hashCode()}_${new File(it).getName()}") }
 
     ch_anno = FIND_SHARDS.out.anno
         .ifEmpty { exit 1, "Cannot find file : ${FIND_SHARDS.out.anno}" }
         .splitText { it.trim() }
         .filter { it != "" }
-        .map { file(it, stageAs: it) }
+        .map { file(it, stageAs: "${it.hashCode()}_${new File(it).getName()}") }
 
     ch_siteqc = FIND_SHARDS.out.siteqc
         .ifEmpty { exit 1, "Cannot find file : ${FIND_SHARDS.out.siteqc}" }
         .splitText { it.trim() }
         .filter { it != "" }
-        .map { file(it, stageAs: it) }
+        .map { file(it, stageAs: "${it.hashCode()}_${new File(it).getName()}") }
 
     shard_results = ch_biallelic.concat(ch_anno).concat(ch_siteqc)
 
