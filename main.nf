@@ -5,7 +5,6 @@ params.biallelic_genotype_shards  = null
 params.anno_shards                = null
 params.siteqc_shards              = null
 
-
 process FIND_SHARDS {
 
     input:
@@ -31,7 +30,6 @@ process FIND_SHARDS {
         ${siteqc_shards}
     """
 }
-
 
 process RUN_GENE {
 
@@ -59,7 +57,6 @@ process RUN_GENE {
     """
 }
 
-
 workflow {
 
     row_indices = Channel.of(6)
@@ -76,19 +73,19 @@ workflow {
         .ifEmpty { exit 1, "Cannot find file : ${FIND_SHARDS.out.biallelic}" }
         .splitText { it.trim() }
         .filter { it != "" }
-        .map { file(it) }
+        .map { file(it, stageAs: it) }
 
     ch_anno = FIND_SHARDS.out.anno
         .ifEmpty { exit 1, "Cannot find file : ${FIND_SHARDS.out.anno}" }
         .splitText { it.trim() }
         .filter { it != "" }
-        .map { file(it) }
+        .map { file(it, stageAs: it) }
 
     ch_siteqc = FIND_SHARDS.out.siteqc
         .ifEmpty { exit 1, "Cannot find file : ${FIND_SHARDS.out.siteqc}" }
         .splitText { it.trim() }
         .filter { it != "" }
-        .map { file(it) }
+        .map { file(it, stageAs: it) }
 
     shard_results = ch_biallelic.concat(ch_anno).concat(ch_siteqc)
 
