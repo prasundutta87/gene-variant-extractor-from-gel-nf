@@ -46,7 +46,7 @@ while read line;do
 done < "$annotation_vcfs"
 
 #Combine variants with their annotations
-combine_variant_using_duckplyr.R "$PWD" "$gene"
+Rscript combine_variant_using_duckplyr.R "$PWD" "$gene"
 echo "all steps successfully over for $gene"
 
 

@@ -5,6 +5,7 @@ params.biallelic_genotype_shards  = null
 params.anno_shards                = null
 params.siteqc_shards              = null
 
+
 process FIND_SHARDS {
 
     input:
@@ -31,6 +32,7 @@ process FIND_SHARDS {
     """
 }
 
+
 process RUN_GENE {
 
     container "prasundutta87/gene-variant-extractor-from-gel-docker-image:1.0.0"
@@ -42,7 +44,7 @@ process RUN_GENE {
         path(anno_txt)
         path(siteqc_txt)
         path(gene_bed_file)
-        path(staged_shards, stageAs: "shards/*")
+        path(staged_shards)
 
     output:
         path "*.tsv"
@@ -56,6 +58,7 @@ process RUN_GENE {
         ${gene_bed_file}
     """
 }
+
 
 workflow {
 
@@ -73,19 +76,19 @@ workflow {
         .ifEmpty { exit 1, "Cannot find file : ${FIND_SHARDS.out.biallelic}" }
         .splitText { it.trim() }
         .filter { it != "" }
-        .map { file(it, stageAs: "${it.hashCode()}_${new File(it).getName()}") }
+        .map { file(it) }
 
     ch_anno = FIND_SHARDS.out.anno
         .ifEmpty { exit 1, "Cannot find file : ${FIND_SHARDS.out.anno}" }
         .splitText { it.trim() }
         .filter { it != "" }
-        .map { file(it, stageAs: "${it.hashCode()}_${new File(it).getName()}") }
+        .map { file(it) }
 
     ch_siteqc = FIND_SHARDS.out.siteqc
         .ifEmpty { exit 1, "Cannot find file : ${FIND_SHARDS.out.siteqc}" }
         .splitText { it.trim() }
         .filter { it != "" }
-        .map { file(it, stageAs: "${it.hashCode()}_${new File(it).getName()}") }
+        .map { file(it) }
 
     shard_results = ch_biallelic.concat(ch_anno).concat(ch_siteqc)
 
