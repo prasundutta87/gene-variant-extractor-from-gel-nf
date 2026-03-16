@@ -67,7 +67,7 @@ workflow {
     FIND_SHARDS(
         row_indices,
         file(params.genes_bed),
-        file(params.biallelic_genotype_shards),
+        file(params.biallelic_genotype_shards),\
         file(params.anno_shards),
         file(params.siteqc_shards)
     )
@@ -93,10 +93,10 @@ workflow {
     shard_results = ch_biallelic.concat(ch_anno).concat(ch_siteqc)
 
     RUN_GENE(
-        FIND_SHARDS.out.biallelic,
-        FIND_SHARDS.out.anno,
-        FIND_SHARDS.out.siteqc,
-        FIND_SHARDS.out.gene_bed,
+        tuple(FIND_SHARDS.out.biallelic,
+            FIND_SHARDS.out.anno,
+            FIND_SHARDS.out.siteqc,
+            FIND_SHARDS.out.gene_bed),
         shard_results.unique().collect()
     )
 }
