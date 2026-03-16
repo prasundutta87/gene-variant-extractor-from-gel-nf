@@ -15,11 +15,11 @@ process FIND_SHARDS {
         path anno_shards
         path siteqc_shards
 
-    output:
-        tuple path("*_biallelic_genotype_shards.txt"),
-              path("*_anno_shards.txt"),
-              path("*_siteqc_shards.txt"),
-              path("temp_*.bed")
+     output:
+        path "*_biallelic_genotype_shards.txt", emit: biallelic
+        path "*_anno_shards.txt", emit: anno
+        path "*_siteqc_shards.txt", emit: siteqc
+        path "temp_*.bed", emit: gene_bed
 
     script:
     """
@@ -44,6 +44,7 @@ process RUN_GENE {
               path(anno_txt),
               path(siteqc_txt),
               path(gene_bed_file)
+              path(staged_shards)
 
     output:
         path "*.tsv"
@@ -63,7 +64,7 @@ workflow {
 
     row_indices = Channel.of(6)
 
-    shard_results = FIND_SHARDS(
+    FIND_SHARDS(
         row_indices,
         file(params.genes_bed),
         file(params.biallelic_genotype_shards),
@@ -71,5 +72,31 @@ workflow {
         file(params.siteqc_shards)
     )
 
-    RUN_GENE(shard_results)
+    ch_biallelic = FIND_SHARDS.out.biallelic
+        .ifEmpty { exit 1, "Cannot find file : ${FIND_SHARDS.out.biallelic}" }
+        .splitText { it.trim() }
+        .filter { it != "" }
+        .map { file(it) }
+
+    ch_anno = FIND_SHARDS.out.anno
+        .ifEmpty { exit 1, "Cannot find file : ${FIND_SHARDS.out.anno}" }
+        .splitText { it.trim() }
+        .filter { it != "" }
+        .map { file(it) }
+
+    ch_siteqc = FIND_SHARDS.out.siteqc
+        .ifEmpty { exit 1, "Cannot find file : ${FIND_SHARDS.out.siteqc}" }
+        .splitText { it.trim() }
+        .filter { it != "" }
+        .map { file(it) }
+
+    shard_results = ch_biallelic.concat(ch_anno).concat(ch_siteqc)
+
+    RUN_GENE(
+        FIND_SHARDS.out.biallelic,
+        FIND_SHARDS.out.anno,
+        FIND_SHARDS.out.siteqc,
+        FIND_SHARDS.out.gene_bed,
+        shard_results.unique().collect()
+    )
 }
