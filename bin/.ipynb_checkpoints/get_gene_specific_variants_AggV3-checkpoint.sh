@@ -28,7 +28,7 @@ while read line;do
 	variant_vcf="$line"
 	bcftools view -Ou -r "$chrom":"$region_start"-"$end" -f 'PASS,.' --threads 4 "$variant_vcf" |  \
 	bcftools filter -i 'AF <= 0.01' --threads 4 -Ou | \
-	bcftools query -i 'GT="alt"' -f '[%SAMPLE\t%CHROM\_%POS\_%REF\_%ALT\t%FILTER\t%GT\t%AC\t%AN\t%AF\n]' >>"$gene"_genotypes.tsv
+	bcftools query -i 'GT="alt"' -f '[%SAMPLE\t%CHROM\_%POS\_%REF\_%ALT\t%FILTER\t%GT\n]' >>"$gene"_genotypes.tsv
 done < "$genotype_vcfs"
 
 while read line;do
