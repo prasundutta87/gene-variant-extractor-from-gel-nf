@@ -40,23 +40,76 @@ process RUN_GENE {
     publishDir "results", mode: 'copy'
 
     input:
-        path(biallelic_txt)
-        path(anno_txt)
-        path(siteqc_txt)
         path(gene_bed_file)
-        path(staged_shards)
+        tuple val(biallelic_names), path('biallelic_*')
+        tuple val(anno_names), path('annotation_*')
+        tuple val(siteqc_names), path('siteqc_*')
 
     output:
         path "*.tsv"
 
     script:
+    // Rename staged files to their proper names  
+    def rename_cmds_b = biallelic_names.withIndex().collect { name, idx ->
+        "mv biallelic_${idx+1} ${name}"
+    }.join('\n    ')
+    def rename_cmds_a = anno_names.withIndex().collect { name, idx ->
+        "mv annotation_${idx+1} ${name}"
+    }.join('\n    ')
+    def rename_cmds_s = siteqc_names.withIndex().collect { name, idx ->
+        "mv siteqc_${idx+1} ${name}"
+    }.join('\n    ')
+    // Create new text files with staged filenames
+    def biallelic_list = biallelic_names.collect { "${it}" }.join('\n')
+    def anno_list = anno_names.collect { "${it}" }.join('\n')
+    def siteqc_list = siteqc_names.collect { "${it}" }.join('\n')
     """
+    # Rename files to their unique names
+    ${rename_cmds_b}
+    ${rename_cmds_a}
+    ${rename_cmds_s}
+
+    # Create new text files pointing to staged filenames
+    echo "${biallelic_list}" > biallelic_staged.txt
+    echo "${anno_list}" > annotation_staged.txt
+    echo "${siteqc_list}" > siteqc_staged.txt
+
     bash get_gene_specific_variants_AggV3.sh \
-        ${biallelic_txt} \
-        ${anno_txt} \
-        ${siteqc_txt} \
+        biallelic_staged.txt \
+        annotation_staged.txt \
+        siteqc_staged.txt \
         ${gene_bed_file}
     """
+}
+
+// Reusable function to process shard files into unique named tuples
+def processShardFiles(channel, channelName) {
+    return channel
+        .ifEmpty { exit 1, "Cannot find file : ${channelName}" }
+        .splitText { it.trim() }
+        .filter { it != "" }
+        .map { line ->
+            // extract s3://... or file path token
+            def m = (line =~ /(s3:\/\/\S+)/)
+            def uri = m ? m[0][1] : line.trim()
+            // remove the s3:// and split to get parent dir and base name
+            def pathNoSchema = uri.replaceFirst(/^s3:\/\//,'')
+            def parts = pathNoSchema.tokenize('/')
+            // join all parts with "_"
+            def newName = parts.join('_')
+            // emit tuple (name, uri)
+            return [ newName, uri ]
+        }
+        // dedupe by the newName so we only keep one row per generated name
+        .unique { it[0] }
+        // Group into a single emission with list of names and list of file objects
+        .toList()
+        .map { tuples -> 
+            def names = tuples.collect { it[0] }
+            def files = tuples.collect { file(it[1]) }
+            println "Collected ${names.size()} unique ${channelName} files"
+            [ names, files ]
+        }
 }
 
 
@@ -72,31 +125,14 @@ workflow {
         file(params.siteqc_shards)
     )
 
-    ch_biallelic = FIND_SHARDS.out.biallelic
-        .ifEmpty { exit 1, "Cannot find file : ${FIND_SHARDS.out.biallelic}" }
-        .splitText { it.trim() }
-        .filter { it != "" }
-        .map { file(it) }
-
-    ch_anno = FIND_SHARDS.out.anno
-        .ifEmpty { exit 1, "Cannot find file : ${FIND_SHARDS.out.anno}" }
-        .splitText { it.trim() }
-        .filter { it != "" }
-        .map { file(it) }
-
-    ch_siteqc = FIND_SHARDS.out.siteqc
-        .ifEmpty { exit 1, "Cannot find file : ${FIND_SHARDS.out.siteqc}" }
-        .splitText { it.trim() }
-        .filter { it != "" }
-        .map { file(it) }
-
-    shard_results = ch_biallelic.concat(ch_anno).concat(ch_siteqc)
+    ch_biallelic = processShardFiles(FIND_SHARDS.out.biallelic, 'biallelic')
+    ch_annot = processShardFiles(FIND_SHARDS.out.anno, 'annotation')
+    ch_siteqc = processShardFiles(FIND_SHARDS.out.siteqc, 'siteqc')
 
     RUN_GENE(
-        FIND_SHARDS.out.biallelic,
-        FIND_SHARDS.out.anno,
-        FIND_SHARDS.out.siteqc,
         FIND_SHARDS.out.gene_bed,
-        shard_results.unique().collect()
+        ch_biallelic,
+        ch_annot,
+        ch_siteqc
     )
 }
