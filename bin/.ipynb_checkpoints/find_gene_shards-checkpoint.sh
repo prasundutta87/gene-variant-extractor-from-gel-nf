@@ -25,4 +25,9 @@ cat VCF_genotypes_${ROW_INDEX}.bed | cut -f13 > ${gene}_biallelic_genotype_shard
 cat VCF_annotations_${ROW_INDEX}.bed | cut -f13 > ${gene}_anno_shards.txt
 cat VCF_siteQC_${ROW_INDEX}.bed | cut -f13 > ${gene}_siteqc_shards.txt
 
+# Extract only the VCF index paths from column-14
+cat VCF_genotypes_${ROW_INDEX}.bed | cut -f14 > ${gene}_biallelic_genotype_shards_idx.txt
+cat VCF_annotations_${ROW_INDEX}.bed | cut -f14 > ${gene}_anno_shards_idx.txt
+cat VCF_siteQC_${ROW_INDEX}.bed | cut -f14 > ${gene}_siteqc_shards_idx.txt
+
 rm VCF_genotypes_${ROW_INDEX}.bed VCF_annotations_${ROW_INDEX}.bed VCF_siteQC_${ROW_INDEX}.bed

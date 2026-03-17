@@ -20,6 +20,9 @@ process FIND_SHARDS {
         path "*_anno_shards.txt", emit: anno
         path "*_siteqc_shards.txt", emit: siteqc
         path "temp_*.bed", emit: gene_bed
+        path "*_biallelic_genotype_shards_idx.txt", emit: biallelic_idx
+        path "*_anno_shards_idx.txt", emit: anno_idx
+        path "*_siteqc_shards_idx.txt", emit: siteqc_idx
 
     script:
     """
@@ -44,6 +47,9 @@ process RUN_GENE {
         tuple val(biallelic_names), path('biallelic_*')
         tuple val(anno_names), path('annotation_*')
         tuple val(siteqc_names), path('siteqc_*')
+        tuple val(biallelic_idx_names), path('biallelic_idx_*')
+        tuple val(anno_idx_names), path('annotation_idx_*')
+        tuple val(siteqc_idx_names), path('siteqc_idx_*')
 
     output:
         path "*.tsv"
@@ -59,6 +65,16 @@ process RUN_GENE {
     def rename_cmds_s = siteqc_names.withIndex().collect { name, idx ->
         "mv siteqc_${idx+1} ${name}"
     }.join('\n    ')
+    // rename indexes
+    def rename_cmds_b_idx = biallelic_idx_names.withIndex().collect { name, idx ->
+        "mv biallelic_idx_${idx+1} ${name}"
+    }.join('\n    ')
+    def rename_cmds_a_idx = anno_idx_names.withIndex().collect { name, idx ->
+        "mv annotation_idx_${idx+1} ${name}"
+    }.join('\n    ')
+    def rename_cmds_s_idx = siteqc_idx_names.withIndex().collect { name, idx ->
+        "mv siteqc_idx_${idx+1} ${name}"
+    }.join('\n    ')
     // Create new text files with staged filenames
     def biallelic_list = biallelic_names.collect { "${it}" }.join('\n')
     def anno_list = anno_names.collect { "${it}" }.join('\n')
@@ -68,6 +84,9 @@ process RUN_GENE {
     ${rename_cmds_b}
     ${rename_cmds_a}
     ${rename_cmds_s}
+    ${rename_cmds_b_idx}
+    ${rename_cmds_a_idx}
+    ${rename_cmds_s_idx}
 
     # Create new text files pointing to staged filenames
     echo "${biallelic_list}" > biallelic_staged.txt
@@ -128,11 +147,17 @@ workflow {
     ch_biallelic = processShardFiles(FIND_SHARDS.out.biallelic, 'biallelic')
     ch_annot = processShardFiles(FIND_SHARDS.out.anno, 'annotation')
     ch_siteqc = processShardFiles(FIND_SHARDS.out.siteqc, 'siteqc')
+    ch_biallelic_idx = processShardFiles(FIND_SHARDS.out.biallelic_idx, 'biallelic_idx')
+    ch_annot_idx = processShardFiles(FIND_SHARDS.out.anno_idx, 'annotation_idx')
+    ch_siteqc_idx = processShardFiles(FIND_SHARDS.out.siteqc_idx, 'siteqc_idx')
 
     RUN_GENE(
         FIND_SHARDS.out.gene_bed,
         ch_biallelic,
         ch_annot,
-        ch_siteqc
+        ch_siteqc,
+        ch_biallelic_idx,
+        ch_annot_idx,
+        ch_siteqc_idx
     )
 }
