@@ -3,9 +3,8 @@ FROM rocker/r-base:4.5.2
 LABEL maintainer="Prasun Dutta"
 LABEL description="Software environment for gene variant extraction pipeline"
 
-# Install bioinformatics and bash tools (latest available from Debian repos) and do not install optional suggested packages automatically
-#Then finally remove downloaded .deb files and apt metadata to keep the image small
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    # core tools
     bash \
     coreutils \
     findutils \
@@ -23,19 +22,38 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     procps \
     ca-certificates \
     build-essential \
+    pkg-config \
+    \
+    # bioinformatics tools
     bcftools \
     bedtools \
     samtools \
     tabix \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    \
+    # R system dependencies (critical)
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libxml2-dev \
+    \
+    # font + text rendering (systemfonts / textshaping)
+    libfontconfig1-dev \
+    libfreetype6-dev \
+    libharfbuzz-dev \
+    libfribidi-dev \
+    \
+    # image / graphics stack (ragg)
+    libpng-dev \
+    libtiff5-dev \
+    libjpeg-dev \
+    libwebp-dev \
+    \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install latest CRAN versions of R packages
-RUN R -e "install.packages(c('tidyverse','argparser','duckdb','duckplyr'), repos='https://cloud.r-project.org')"
+# Install R packages
+RUN R -e "options(repos = c(CRAN='https://cloud.r-project.org')); \
+          install.packages(c('argparser','duckdb','duckplyr','tidyverse'))"
 
-# Set the default directory
 WORKDIR /workspace
 
-# Default command: start an interactive Bash shell when the container runs
-# This allows the container to behave like a standard Linux environment
-# and makes it easy to execute bash scripts or use it inside Nextflow
 CMD ["/bin/bash"]
