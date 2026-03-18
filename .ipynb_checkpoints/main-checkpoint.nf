@@ -38,7 +38,7 @@ process FIND_SHARDS {
 
 process RUN_GENE {
 
-    container "prasundutta87/gene-variant-extractor-from-gel-docker-image:1.0.0"
+    container "prasundutta87/gene-variant-extractor-from-gel-docker-image:1.0.1"
 
     publishDir "results", mode: 'copy'
 
