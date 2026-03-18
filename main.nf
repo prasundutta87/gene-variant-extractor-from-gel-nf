@@ -50,6 +50,7 @@ process RUN_GENE {
         tuple val(biallelic_idx_names), path('biallelic_idx_*')
         tuple val(anno_idx_names), path('annotation_idx_*')
         tuple val(siteqc_idx_names), path('siteqc_idx_*')
+        path combine_duckplyr
 
     output:
         path "*.tsv"
@@ -135,6 +136,7 @@ def processShardFiles(channel, channelName) {
 workflow {
 
     row_indices = Channel.of(6)
+    combine_duckplyr = Channel.fromPath("${workflow.projectDir}/bin/combine_variant_using_duckplyr.R")
 
     FIND_SHARDS(
         row_indices,
@@ -158,6 +160,7 @@ workflow {
         ch_siteqc,
         ch_biallelic_idx,
         ch_annot_idx,
-        ch_siteqc_idx
+        ch_siteqc_idx,
+        combine_duckplyr
     )
 }
