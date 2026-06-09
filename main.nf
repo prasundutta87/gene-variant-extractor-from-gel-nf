@@ -13,9 +13,6 @@ params.outdir                     = "results"
 
 
 process FIND_SHARDS {
-    // For each gene row, finds overlapping VCF shards using bedtools intersect.
-    // Outputs shard path lists and index lists + single-row gene BED.
-
     input:
         val  row_index
         path genes_bed
@@ -45,39 +42,41 @@ process FIND_SHARDS {
 
 
 process RUN_GENE {
-    // Extracts genotypes, siteQC and VEP/GreenDB annotations from AggV3 shards.
-    // bcftools streams directly from s3:// paths in the shard text files.
-    // combine_variant_using_duckplyr.R is called from bin/ automatically.
-
     container "prasundutta87/gene-variant-extractor-from-gel-docker-image:2.0.0"
 
     publishDir "${params.outdir}", mode: 'copy', pattern: "*.tsv"
 
     input:
         path gene_bed_file
-        path biallelic_shards_txt
-        path anno_shards_txt
-        path siteqc_shards_txt
+        // stageAs gives each file a unique name using its index
+        // VCF and its index are staged with matching basenames so bcftools finds them
+        path biallelic_vcfs, stageAs: "biallelic_??.vcf.gz"
+        path biallelic_idx,  stageAs: "biallelic_??.vcf.gz.tbi"
+        path anno_vcfs,      stageAs: "anno_??.vcf.gz"
+        path anno_idx,       stageAs: "anno_??.vcf.gz.tbi"
+        path siteqc_vcfs,    stageAs: "siteqc_??.vcf.gz"
+        path siteqc_idx,     stageAs: "siteqc_??.vcf.gz.tbi"
 
     output:
         tuple path(gene_bed_file), path("*.tsv"), emit: gene_tsv
 
     script:
     """
+    # Write staged filenames to text files for the bash script
+    ls biallelic_??.vcf.gz > biallelic_staged.txt
+    ls anno_??.vcf.gz      > annotation_staged.txt
+    ls siteqc_??.vcf.gz    > siteqc_staged.txt
+
     bash get_gene_specific_variants_AggV3.sh \
-        ${biallelic_shards_txt} \
-        ${anno_shards_txt} \
-        ${siteqc_shards_txt} \
+        biallelic_staged.txt \
+        annotation_staged.txt \
+        siteqc_staged.txt \
         ${gene_bed_file}
     """
 }
 
 
 process ANNOTATE_GENE {
-    // Joins phenotype data, normalises metadata, classifies variants for review
-    // and counts carriers by affection status.
-    // join_additional_anno_with_genes.R is called from bin/ automatically.
-
     container "prasundutta87/gene-variant-extractor-from-gel-docker-image:2.0.0"
 
     publishDir "${params.outdir}", mode: 'copy'
@@ -107,14 +106,21 @@ process ANNOTATE_GENE {
 }
 
 
+// Reads shard path text file and returns [names, files] tuple for staging
+def processShardFiles(channel) {
+    return channel
+        .splitText { it.trim() }
+        .filter   { it != "" }
+        .map      { line -> file(line.trim()) }
+        .collect()
+}
+
+
 workflow {
 
-    // Count lines in genes BED to get number of genes
-    // Then create a channel of row indices: 1, 2, 3 ... n
     def n_genes = file(params.genes_bed).countLines()
     ch_row_indices = Channel.from( 1..n_genes )
 
-    // Run FIND_SHARDS once per gene in parallel
     FIND_SHARDS(
         ch_row_indices,
         file(params.genes_bed),
@@ -123,15 +129,24 @@ workflow {
         file(params.siteqc_shards)
     )
 
-    // Extract and merge variants for each gene
+    // Stage VCF and index files via Nextflow using Lifebit S3 credentials
+    ch_biallelic     = processShardFiles(FIND_SHARDS.out.biallelic)
+    ch_anno          = processShardFiles(FIND_SHARDS.out.anno)
+    ch_siteqc        = processShardFiles(FIND_SHARDS.out.siteqc)
+    ch_biallelic_idx = processShardFiles(FIND_SHARDS.out.biallelic_idx)
+    ch_anno_idx      = processShardFiles(FIND_SHARDS.out.anno_idx)
+    ch_siteqc_idx    = processShardFiles(FIND_SHARDS.out.siteqc_idx)
+
     RUN_GENE(
         FIND_SHARDS.out.gene_bed,
-        FIND_SHARDS.out.biallelic,
-        FIND_SHARDS.out.anno,
-        FIND_SHARDS.out.siteqc
+        ch_biallelic,
+        ch_anno,
+        ch_siteqc,
+        ch_biallelic_idx,
+        ch_anno_idx,
+        ch_siteqc_idx
     )
 
-    // Annotate and classify variants for each gene
     ANNOTATE_GENE(
         RUN_GENE.out.gene_tsv.map { bed, tsv -> tsv },
         file(params.sample_list),
