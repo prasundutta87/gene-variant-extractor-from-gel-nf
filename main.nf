@@ -44,6 +44,8 @@ process FIND_SHARDS {
 process RUN_GENE {
     container "prasundutta87/gene-variant-extractor-from-gel-docker-image:2.0.0"
 
+    stageInMode 'copy'
+
     publishDir "${params.outdir}", mode: 'copy', pattern: "*.tsv"
 
     input:
