@@ -98,7 +98,7 @@ process ANNOTATE_GENE {
     script:
     """
     gene_name=\$(cut -f4 ${gene_bed})
-    Rscript ${projectDir}/bin/join_additional_anno_with_genes.R \
+    Rscript join_additional_anno_with_genes.R \
         \$gene_name \
         ${sample_list} \
         ${seq_report_100k} \
