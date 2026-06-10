@@ -68,21 +68,6 @@ process RUN_GENE {
     ls biallelic_??.vcf.gz > biallelic_staged.txt
     ls anno_??.vcf.gz      > annotation_staged.txt
     ls siteqc_??.vcf.gz    > siteqc_staged.txt
-	
-	echo "=== files in task directory ==="
-	ls -lah
-
-	echo "=== biallelic staged ==="
-	cat biallelic_staged.txt
-
-	echo "=== annotation staged ==="
-	cat annotation_staged.txt
-
-	echo "=== siteqc staged ==="
-	cat siteqc_staged.txt
-
-	echo "=== VCF index files ==="
-	ls -lah *.tbi || true
 
     bash get_gene_specific_variants_AggV3.sh \
         biallelic_staged.txt \
@@ -112,7 +97,7 @@ process ANNOTATE_GENE {
     script:
     def gene_name = gene_tsv.baseName
     """
-    join_additional_anno_with_genes \
+    Rscript \$baseDir/bin/join_additional_anno_with_genes.R \
         ${gene_name} \
         ${sample_list} \
         ${seq_report_100k} \
@@ -155,14 +140,14 @@ workflow {
     ch_siteqc_idx    = processShardFiles(FIND_SHARDS.out.siteqc_idx)
 
     RUN_GENE(
-		FIND_SHARDS.out.gene_bed,
-		ch_biallelic,
-		ch_biallelic_idx,
-		ch_anno,
-		ch_anno_idx,
-		ch_siteqc,
-		ch_siteqc_idx
-)
+        FIND_SHARDS.out.gene_bed,
+        ch_biallelic,
+        ch_anno,
+        ch_siteqc,
+        ch_biallelic_idx,
+        ch_anno_idx,
+        ch_siteqc_idx
+    )
 
     ANNOTATE_GENE(
         RUN_GENE.out.gene_tsv.map { bed, tsv -> tsv },
