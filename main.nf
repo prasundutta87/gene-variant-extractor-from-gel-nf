@@ -42,11 +42,9 @@ process FIND_SHARDS {
 
 
 process RUN_GENE {
-    container "prasundutta87/gene-variant-extractor-from-gel-docker-image:2.0.0"
+    container params.container
 
     stageInMode 'copy'
-
-    publishDir "${params.outdir}", mode: 'copy', pattern: "*.tsv"
 
     input:
         path gene_bed_file
@@ -79,13 +77,12 @@ process RUN_GENE {
 
 
 process ANNOTATE_GENE {
-    container "prasundutta87/gene-variant-extractor-from-gel-docker-image:2.0.0"
+    container params.container
 
     publishDir "${params.outdir}", mode: 'copy'
 
     input:
-        path gene_bed
-        path gene_tsv
+        tuple path(gene_bed), path(gene_tsv)
         path sample_list
         path seq_report_100k
         path seq_report_gms
@@ -93,7 +90,7 @@ process ANNOTATE_GENE {
         path gms_phenotype
 
     output:
-        path "*/*_for_review.tsv"
+        path "*/*_for_review.tsv.gz"
 
     script:
     """
@@ -151,8 +148,7 @@ workflow {
     )
 
     ANNOTATE_GENE(
-        RUN_GENE.out.gene_tsv.map { bed, tsv -> bed },
-        RUN_GENE.out.gene_tsv.map { bed, tsv -> tsv },
+        RUN_GENE.out.gene_tsv,
         file(params.sample_list),
         file(params.seq_report_100k),
         file(params.seq_report_gms),

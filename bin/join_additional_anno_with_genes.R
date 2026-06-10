@@ -82,7 +82,7 @@ preferred_platekeys <- duplicated_sample_list %>%
   pull(platekey)
 ##n=30 cases where unique platekeys match a single unique participant ID (GMS)
 #unique_platekeys_matching_unique_participant_ID<-participant_metadata%>%count(participant_id)%>%
-#filter(n>1)
+  #filter(n>1)
 
 ###########################################################################
 
@@ -103,59 +103,59 @@ annotate_with_participant_metadata <- function(gene_name) {
         SpliceAI_pred_DS_DL
       )
     ) %>%
-    mutate(
-      DS_range = case_when(
-        DS >= 0.2 & DS <= 0.5 ~ "0.2 to 0.5",
-        DS > 0.5 & DS <= 0.8  ~ "0.5 to 0.8",
-        DS > 0.8 & DS <= 1    ~ "0.8 to 1",
-        TRUE ~ NA
-      ),
-      DS_source = case_when(
-        is.na(DS) | DS == 0       ~ NA_character_,
-        DS == SpliceAI_pred_DS_AG ~ "Acceptor Gain",
-        DS == SpliceAI_pred_DS_DG ~ "Donor Gain",
-        DS == SpliceAI_pred_DS_AL ~ "Acceptor Loss",
-        DS == SpliceAI_pred_DS_DL ~ "Donor Loss",
-        TRUE ~ NA_character_
-      ),
-      zygosity = case_when(
-        genotype %in% c("1/1", "1") ~ "HOM/HEMI",
-        genotype == "0/1"           ~ "HET"
-      )
-    ) %>%
-    mutate(
-      HGVSc = na_if(HGVSc, "-"),
-      HGVSc_empty = is.na(HGVSc),
-      SNV_with_valid_HGVSc = !HGVSc_empty &
-        grepl("\\+|\\-", HGVSc) & !grepl("ins|del|dup", HGVSc),
-      distance_from_nearest_exon = as.numeric(stringr::str_match(HGVSc, "[\\+\\-](\\d+)")[, 2]),
-      deep_intronic = !is.na(distance_from_nearest_exon) &
-        distance_from_nearest_exon > 20,
-      HGVSc_annotation_category = case_when(
-        is.na(HGVSc)                      ~ "Missing HGVSc",
-        grepl("ins|del|dup", HGVSc)       ~ "Indel/dup",
-        !grepl("\\+|\\-", HGVSc)          ~ "Not intronic",
-        is.na(distance_from_nearest_exon) ~ "Cannot extract distance",
-        .default                          = "Valid intronic SNV"
-      )
-    ) %>%
-    left_join(participant_metadata,by = "platekey")%>%
-    relocate(participant_id,type,study_source,programme,duplicate_of) %>%
-    select(
-      -starts_with("gnomAD"),
-      gnomADg,
-      gnomADg_AF_exomes,
-      gnomADg_AF_exomes_XX,
-      gnomADg_AF_exomes_XY,
-      gnomADg_AF_genomes,
-      gnomADg_AF_genomes_XX,
-      gnomADg_AF_genomes_XY,
-      gnomADg_AF_joint,
-      gnomADg_AF_joint_XX,
-      gnomADg_AF_joint_XY
-    ) %>%
-    left_join(RD_phenotype_data,by="participant_id")%>%
-    left_join(GMS_phenotype_data,by="participant_id")
+  mutate(
+    DS_range = case_when(
+      DS >= 0.2 & DS <= 0.5 ~ "0.2 to 0.5",
+      DS > 0.5 & DS <= 0.8  ~ "0.5 to 0.8",
+      DS > 0.8 & DS <= 1    ~ "0.8 to 1",
+      TRUE ~ NA
+    ),
+    DS_source = case_when(
+      is.na(DS) | DS == 0       ~ NA_character_,
+      DS == SpliceAI_pred_DS_AG ~ "Acceptor Gain",
+      DS == SpliceAI_pred_DS_DG ~ "Donor Gain",
+      DS == SpliceAI_pred_DS_AL ~ "Acceptor Loss",
+      DS == SpliceAI_pred_DS_DL ~ "Donor Loss",
+      TRUE ~ NA_character_
+    ),
+    zygosity = case_when(
+      genotype %in% c("1/1", "1") ~ "HOM/HEMI",
+      genotype == "0/1"           ~ "HET"
+    )
+  ) %>%
+  mutate(
+    HGVSc = na_if(HGVSc, "-"),
+    HGVSc_empty = is.na(HGVSc),
+    SNV_with_valid_HGVSc = !HGVSc_empty &
+      grepl("\\+|\\-", HGVSc) & !grepl("ins|del|dup", HGVSc),
+    distance_from_nearest_exon = as.numeric(stringr::str_match(HGVSc, "[\\+\\-](\\d+)")[, 2]),
+    deep_intronic = !is.na(distance_from_nearest_exon) &
+      distance_from_nearest_exon > 20,
+    HGVSc_annotation_category = case_when(
+      is.na(HGVSc)                      ~ "Missing HGVSc",
+      grepl("ins|del|dup", HGVSc)       ~ "Indel/dup",
+      !grepl("\\+|\\-", HGVSc)          ~ "Not intronic",
+      is.na(distance_from_nearest_exon) ~ "Cannot extract distance",
+      .default                          = "Valid intronic SNV"
+    )
+  ) %>%
+  left_join(participant_metadata,by = "platekey")%>%
+  relocate(participant_id,type,study_source,programme,duplicate_of) %>%
+  select(
+    -starts_with("gnomAD"),
+    gnomADg,
+    gnomADg_AF_exomes,
+    gnomADg_AF_exomes_XX,
+    gnomADg_AF_exomes_XY,
+    gnomADg_AF_genomes,
+    gnomADg_AF_genomes_XX,
+    gnomADg_AF_genomes_XY,
+    gnomADg_AF_joint,
+    gnomADg_AF_joint_XX,
+    gnomADg_AF_joint_XY
+  ) %>%
+  left_join(RD_phenotype_data,by="participant_id")%>%
+  left_join(GMS_phenotype_data,by="participant_id")
   return(result)
 }
 
@@ -387,11 +387,11 @@ gene_for_review <- gene_annotated %>%
 
 dir.create(gene_name, showWarnings = FALSE)
 fwrite(gene_for_review,
-       paste0(gene_name, "/", tolower(gene_name), "_for_review.tsv"),
-       sep = "\t", row.names = FALSE, quote = FALSE)
+       paste0(gene_name, "/", tolower(gene_name), "_for_review.tsv.gz"),
+       sep = "\t", row.names = FALSE, quote = FALSE, compress = "gzip")
 
 # ── Output validation ─────────────────────────────────────────────────────────
-output_path <- paste0(gene_name, "/", tolower(gene_name), "_for_review.tsv")
+output_path <- paste0(gene_name, "/", tolower(gene_name), "_for_review.tsv.gz")
 if (file.exists(output_path) && file.info(output_path)$size > 0) {
   message("SUCCESS: output written to ", output_path)
 } else {
