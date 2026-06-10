@@ -142,10 +142,10 @@ workflow {
     RUN_GENE(
         FIND_SHARDS.out.gene_bed,
         ch_biallelic,
-        ch_anno,
-        ch_siteqc,
         ch_biallelic_idx,
+        ch_anno,
         ch_anno_idx,
+        ch_siteqc,
         ch_siteqc_idx
     )
 
