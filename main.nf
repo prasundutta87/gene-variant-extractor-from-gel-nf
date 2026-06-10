@@ -84,6 +84,7 @@ process ANNOTATE_GENE {
     publishDir "${params.outdir}", mode: 'copy'
 
     input:
+        path gene_bed
         path gene_tsv
         path sample_list
         path seq_report_100k
@@ -95,10 +96,10 @@ process ANNOTATE_GENE {
         path "*/*_for_review.tsv"
 
     script:
-    def gene_name = gene_tsv.baseName
     """
-    Rscript \$baseDir/bin/join_additional_anno_with_genes.R \
-        ${gene_name} \
+    gene_name=\$(cut -f4 ${gene_bed})
+    Rscript ${projectDir}/bin/join_additional_anno_with_genes.R \
+        \$gene_name \
         ${sample_list} \
         ${seq_report_100k} \
         ${seq_report_gms} \
@@ -150,6 +151,7 @@ workflow {
     )
 
     ANNOTATE_GENE(
+        RUN_GENE.out.gene_tsv.map { bed, tsv -> bed },
         RUN_GENE.out.gene_tsv.map { bed, tsv -> tsv },
         file(params.sample_list),
         file(params.seq_report_100k),
