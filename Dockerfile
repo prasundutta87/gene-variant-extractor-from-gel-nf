@@ -1,69 +1,50 @@
-FROM rocker/r-base:4.5.2
+FROM rocker/tidyverse:4.5.2
+# Base image rocker/tidyverse already includes:
+#   R, tidyverse, ggplot2, dplyr, gcc, make, perl, git, wget,
+#   ca-certificates, zlib1g-dev, libbz2-dev, liblzma-dev, libssl-dev,
+#   libcurl4-openssl-dev, libxml2-dev, font and graphics libraries and more.
+# We only install what is genuinely missing from the base image.
+
 LABEL maintainer="Prasun Dutta"
 LABEL description="Software environment for gene variant extraction pipeline"
 
+# ── System tools and bioinformatics dependencies ─────────────────────────────
+# bzip2        : needed to extract .tar.bz2 source archives (not in base image)
+# autoconf/automake : needed to run ./configure for htslib/bcftools compilation
+# bedtools     : genome arithmetic (intersect, merge, etc.)
+# samtools     : SAM/BAM manipulation
+# tabix        : index and query genomic files
+# libperl-dev  : Perl bindings for bcftools (enables -i/-e filtering with Perl)
+# libgsl0-dev  : GNU Scientific Library for bcftools polysomy command
+# Note: libcurl4-openssl-dev is already in rocker/tidyverse and provides
+#       the libcurl support needed for bcftools S3 streaming
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    bash \
-    coreutils \
-    findutils \
-    grep \
-    sed \
-    gawk \
-    tar \
-    gzip \
     bzip2 \
-    less \
-    vim \
-    wget \
-    curl \
-    git \
-    procps \
-    ca-certificates \
-    build-essential \
-    pkg-config \
     autoconf \
     automake \
-    make \
-    gcc \
-    perl \
-    \
-    # bioinformatics tools (NOT bcftools — compiled from source below)
+    less \
+    vim \
     bedtools \
     samtools \
     tabix \
-    \
-    # htslib/bcftools build dependencies (from official bcftools INSTALL docs)
-    zlib1g-dev \
-    libbz2-dev \
-    liblzma-dev \
-    libcurl4-gnutls-dev \
-    libssl-dev \
     libperl-dev \
     libgsl0-dev \
-    \
-    # R system dependencies
-    libxml2-dev \
-    \
-    # font + text rendering
-    libfontconfig1-dev \
-    libfreetype6-dev \
-    libharfbuzz-dev \
-    libfribidi-dev \
-    \
-    # image / graphics stack
-    libpng-dev \
-    libtiff5-dev \
-    libjpeg-dev \
-    libwebp-dev \
-    \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Build htslib first with explicit libcurl support
+# ── bcftools compiled from source with S3/libcurl support ────────────────────
+# The apt version of bcftools does NOT include S3 streaming support.
+# We compile both htslib and bcftools from source so bcftools can read
+# directly from s3:// paths without downloading full VCF shards.
+# Steps:
+#   1. Download and compile htslib — ./configure auto-detects libcurl and
+#      enables S3 support
+#   2. Download and compile bcftools against that htslib
+#   3. Clean up source files to keep the image small
 ARG HTSLIB_VERSION=1.21
 ARG BCFTOOLS_VERSION=1.21
 
-RUN wget https://github.com/samtools/htslib/releases/download/${HTSLIB_VERSION}/htslib-${HTSLIB_VERSION}.tar.bz2 \
+RUN wget -q https://github.com/samtools/htslib/releases/download/${HTSLIB_VERSION}/htslib-${HTSLIB_VERSION}.tar.bz2 \
     && tar -xjf htslib-${HTSLIB_VERSION}.tar.bz2 \
     && cd htslib-${HTSLIB_VERSION} \
     && ./configure --prefix=/usr/local \
@@ -71,10 +52,8 @@ RUN wget https://github.com/samtools/htslib/releases/download/${HTSLIB_VERSION}/
     && make install \
     && ldconfig \
     && cd .. \
-    && rm -rf htslib-${HTSLIB_VERSION} htslib-${HTSLIB_VERSION}.tar.bz2
-
-# Build bcftools against the htslib we just installed
-RUN wget https://github.com/samtools/bcftools/releases/download/${BCFTOOLS_VERSION}/bcftools-${BCFTOOLS_VERSION}.tar.bz2 \
+    && rm -rf htslib-${HTSLIB_VERSION} htslib-${HTSLIB_VERSION}.tar.bz2 \
+    && wget -q https://github.com/samtools/bcftools/releases/download/${BCFTOOLS_VERSION}/bcftools-${BCFTOOLS_VERSION}.tar.bz2 \
     && tar -xjf bcftools-${BCFTOOLS_VERSION}.tar.bz2 \
     && cd bcftools-${BCFTOOLS_VERSION} \
     && ./configure --prefix=/usr/local --with-htslib=/usr/local \
@@ -83,12 +62,24 @@ RUN wget https://github.com/samtools/bcftools/releases/download/${BCFTOOLS_VERSI
     && cd .. \
     && rm -rf bcftools-${BCFTOOLS_VERSION} bcftools-${BCFTOOLS_VERSION}.tar.bz2
 
-# Print full version output for debugging — does not fail build
-RUN bcftools --version
+# ── Additional R packages via Posit Public Package Manager ───────────────────
+# Posit PPM provides pre-compiled binary packages for Ubuntu (noble = 24.04).
+# This is much faster than compiling from source — no waiting for duckdb
+# to compile. Same packages and versions as CRAN, just pre-built for Linux.
+RUN R -e "options(repos = c(CRAN='https://packagemanager.posit.co/cran/__linux__/noble/latest')); \
+          install.packages(c('argparser','duckdb','duckplyr','data.table','gt','ggpubr'))"
 
-# Install R packages
-RUN R -e "options(repos = c(CRAN='https://cloud.r-project.org')); \
-          install.packages(c('argparser','duckdb','duckplyr','tidyverse','data.table','gt','ggpubr'))"
+# ── Verify all tools ──────────────────────────────────────────────────────────
+# Build fails here if anything is missing — better to know now than later.
+RUN echo "=== Checking all tools ===" && \
+    bcftools --version | head -1 && \
+    samtools --version | head -1 && \
+    bedtools --version && \
+    tabix --version 2>&1 | head -1 && \
+    Rscript -e "library(tidyverse); library(duckplyr); library(data.table); \
+                library(argparser); library(gt); library(ggpubr); \
+                cat('All R packages OK\n')" && \
+    echo "=== All tools verified ==="
 
 WORKDIR /workspace
 CMD ["/bin/bash"]
