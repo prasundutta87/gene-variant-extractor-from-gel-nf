@@ -18,7 +18,6 @@
 #     plain medianDP/medianGQ/ABratio/missingness_rate that autosomes have. The
 #     plain columns DO NOT EXIST on chrX.
 #   - While-read loops append across shards when a gene spans a boundary.
-#   - No mkdir/mv — Nextflow publishDir handles output staging.
 
 set -euo pipefail
 
@@ -41,8 +40,11 @@ echo "Processing: $gene ($chrom:$region_start-$end)"
 printf "sample\tvariant_id\tFILTER\tgenotype\n" > "$gene"_genotypes.tsv
 
 #Add siteQC file header - chrX emits sex-stratified columns, autosomes plain ones
+# chrX siteQC provides AB_RATIO_XX only. No AB_RATIO_XY exists because
+# allele-balance QC is based on heterozygous genotypes, whereas XY chrX
+# calls are hemizygous.
 if [[ "$chrom" == "chrX" ]]; then
-	printf "variant_id\tGEL_cohort_AC\tGEL_cohort_AN\tGEL_cohort_AF\tAC_Hom\tAC_Het\tAC_Hemi\tMEDIAN_DP_XX\tMEDIAN_DP_XY\tMEDIAN_GQ_XX\tMEDIAN_GQ_XY\tAB_RATIO_XX\tAB_RATIO_XY\tMISSINGNESS_RATE_XX\tMISSINGNESS_RATE_XY\n" > "$gene"_siteQC.tsv
+	printf "variant_id\tGEL_cohort_AC\tGEL_cohort_AN\tGEL_cohort_AF\tAC_Hom\tAC_Het\tAC_Hemi\tMEDIAN_DP_XX\tMEDIAN_DP_XY\tMEDIAN_GQ_XX\tMEDIAN_GQ_XY\tAB_RATIO_XX\tMISSINGNESS_RATE_XX\tMISSINGNESS_RATE_XY\n" > "$gene"_siteQC.tsv
 else
 	printf "variant_id\tGEL_cohort_AC\tGEL_cohort_AN\tGEL_cohort_AF\tAC_Hom\tAC_Het\tAC_Hemi\tmedianDP\tmedianGQ\tABratio\tmissingness_rate\n" > "$gene"_siteQC.tsv
 fi
@@ -64,7 +66,7 @@ if [[ "$chrom" == "chrX" ]]; then
 	while read line;do
 		siteQC_vcf="$line"
 		bcftools view -Ou -r "$chrom":"$region_start"-"$end" --threads 4 "$siteQC_vcf" |  \
-		bcftools query -f '%CHROM\_%POS\_%REF\_%ALT\t%INFO/AC\t%INFO/AN\t%INFO/AF\t%INFO/AC_Hom\t%INFO/AC_Het\t%INFO/AC_Hemi\t%MEDIAN_DP_XX\t%MEDIAN_DP_XY\t%MEDIAN_GQ_XX\t%MEDIAN_GQ_XY\t%AB_RATIO_XX\t%AB_RATIO_XY\t%MISSINGNESS_RATE_XX\t%MISSINGNESS_RATE_XY\n' >>"$gene"_siteQC.tsv
+		bcftools query -f '%CHROM\_%POS\_%REF\_%ALT\t%INFO/AC\t%INFO/AN\t%INFO/AF\t%INFO/AC_Hom\t%INFO/AC_Het\t%INFO/AC_Hemi\t%MEDIAN_DP_XX\t%MEDIAN_DP_XY\t%MEDIAN_GQ_XX\t%MEDIAN_GQ_XY\t%AB_RATIO_XX\t%MISSINGNESS_RATE_XX\t%MISSINGNESS_RATE_XY\n' >>"$gene"_siteQC.tsv
 	done < "$siteqc_vcfs"
 else
 	while read line;do

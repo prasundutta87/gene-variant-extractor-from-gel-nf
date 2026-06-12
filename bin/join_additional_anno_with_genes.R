@@ -381,9 +381,10 @@ normalise_chrX_qc_metrics <- function(df) {
         sex == "male"   ~ MEDIAN_GQ_XY,
         TRUE            ~ NA_real_
       ),
+	  
+	  # No AB_RATIO_XY metric exists because XY (Male) samples lack heterozygous chrX calls.
       ABratio = case_when(
         sex == "female" ~ AB_RATIO_XX,
-        sex == "male"   ~ AB_RATIO_XY,
         TRUE            ~ NA_real_
       ),
       missingness_rate = case_when(
@@ -397,7 +398,7 @@ normalise_chrX_qc_metrics <- function(df) {
     select(
       -MEDIAN_DP_XX, -MEDIAN_DP_XY,
       -MEDIAN_GQ_XX, -MEDIAN_GQ_XY,
-      -AB_RATIO_XX, -AB_RATIO_XY,
+      -AB_RATIO_XX,
       -MISSINGNESS_RATE_XX, -MISSINGNESS_RATE_XY
     )
 }
