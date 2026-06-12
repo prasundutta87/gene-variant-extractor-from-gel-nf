@@ -374,12 +374,12 @@ normalise_chrX_qc_metrics <- function(df) {
       medianDP = case_when(
         sex == "female" ~ MEDIAN_DP_XX,
         sex == "male"   ~ MEDIAN_DP_XY,
-        TRUE            ~ NA_real_
+        TRUE            ~ medianDP
       ),
       medianGQ = case_when(
         sex == "female" ~ MEDIAN_GQ_XX,
         sex == "male"   ~ MEDIAN_GQ_XY,
-        TRUE            ~ NA_real_
+        TRUE            ~ medianGQ
       ),
 	  
 	  # No AB_RATIO_XY metric exists because XY (Male) samples lack heterozygous chrX calls.
@@ -390,7 +390,7 @@ normalise_chrX_qc_metrics <- function(df) {
       missingness_rate = case_when(
         sex == "female" ~ MISSINGNESS_RATE_XX,
         sex == "male"   ~ MISSINGNESS_RATE_XY,
-        TRUE            ~ NA_real_
+        TRUE            ~ missingness_rate
       )
     ) %>%
     # Drop only the siteQC XX/XY columns by name - NOT ends_with("_XX"),

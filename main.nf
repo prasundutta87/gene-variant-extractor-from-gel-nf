@@ -11,6 +11,11 @@ params.rd_phenotype               = null
 params.gms_phenotype              = null
 params.outdir                     = "results"
 
+# If a task fails, Nextflow stops launching new tasks but waits for
+# currently running tasks to finish before terminating the workflow.
+process {
+    errorStrategy = 'finish'
+}
 
 process FIND_SHARDS {
     input:
