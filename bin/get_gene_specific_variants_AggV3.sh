@@ -14,7 +14,9 @@
 #   ${gene}_genotypes.tsv, ${gene}_siteQC.tsv, ${gene}_annotation.tsv, ${gene}.tsv
 #
 # Notes:
-#   - chrX siteQC shards lack DP/GQ/ABratio/missingness — handled separately.
+#   - chrX siteQC shards carry SEX-STRATIFIED QC (..._XX / ..._XY) instead of the
+#     plain medianDP/medianGQ/ABratio/missingness_rate that autosomes have. The
+#     plain columns DO NOT EXIST on chrX.
 #   - While-read loops append across shards when a gene spans a boundary.
 #   - No mkdir/mv — Nextflow publishDir handles output staging.
 
@@ -38,7 +40,7 @@ echo "Processing: $gene ($chrom:$region_start-$end)"
 #Add variant file header
 printf "sample\tvariant_id\tFILTER\tgenotype\n" > "$gene"_genotypes.tsv
 
-#Add siteQC file header
+#Add siteQC file header - chrX emits sex-stratified columns, autosomes plain ones
 if [[ "$chrom" == "chrX" ]]; then
 	printf "variant_id\tGEL_cohort_AC\tGEL_cohort_AN\tGEL_cohort_AF\tAC_Hom\tAC_Het\tAC_Hemi\tMEDIAN_DP_XX\tMEDIAN_DP_XY\tMEDIAN_GQ_XX\tMEDIAN_GQ_XY\tAB_RATIO_XX\tAB_RATIO_XY\tMISSINGNESS_RATE_XX\tMISSINGNESS_RATE_XY\n" > "$gene"_siteQC.tsv
 else

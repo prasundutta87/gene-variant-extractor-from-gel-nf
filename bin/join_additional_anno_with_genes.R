@@ -258,21 +258,6 @@ classify_variants_for_review <- function(data, very_rare_af = 0.00001, rare_af =
         keep_for_review    ~ paste0("kept: ", IMPACT, " | ", Consequence, " | gnomAD=", gnomad_scenario, " | GEL=", gel_scenario),
         TRUE               ~ paste0("not kept: ", Consequence)
       ),
-      medianDP = case_when(
-        sex == "female" & !is.na(MEDIAN_DP_XX) ~ MEDIAN_DP_XX,
-        sex == "male"   & !is.na(MEDIAN_DP_XY) ~ MEDIAN_DP_XY,
-        TRUE                                    ~ medianDP
-      ),
-      medianGQ = case_when(
-        sex == "female" & !is.na(MEDIAN_GQ_XX) ~ MEDIAN_GQ_XX,
-        sex == "male"   & !is.na(MEDIAN_GQ_XY) ~ MEDIAN_GQ_XY,
-        TRUE                                    ~ medianGQ
-      ),
-      missingness_rate = case_when(
-        sex == "female" & !is.na(MISSINGNESS_RATE_XX) ~ MISSINGNESS_RATE_XX,
-        sex == "male"   & !is.na(MISSINGNESS_RATE_XY) ~ MISSINGNESS_RATE_XY,
-        TRUE                                           ~ missingness_rate
-      ),
       passes_quality = case_when(
         FILTER           != "PASS" ~ FALSE,
         medianDP         < 10      ~ FALSE,
@@ -381,6 +366,42 @@ count_carriers_by_affection <- function(df) {
     )
 }
 
+normalise_chrX_qc_metrics <- function(df) {
+  if (!"MEDIAN_DP_XX" %in% names(df)) return(df)   # XX/XY columns exist only on chrX tables
+
+  df %>%
+    mutate(
+      medianDP = case_when(
+        sex == "female" ~ MEDIAN_DP_XX,
+        sex == "male"   ~ MEDIAN_DP_XY,
+        TRUE            ~ NA_real_
+      ),
+      medianGQ = case_when(
+        sex == "female" ~ MEDIAN_GQ_XX,
+        sex == "male"   ~ MEDIAN_GQ_XY,
+        TRUE            ~ NA_real_
+      ),
+      ABratio = case_when(
+        sex == "female" ~ AB_RATIO_XX,
+        sex == "male"   ~ AB_RATIO_XY,
+        TRUE            ~ NA_real_
+      ),
+      missingness_rate = case_when(
+        sex == "female" ~ MISSINGNESS_RATE_XX,
+        sex == "male"   ~ MISSINGNESS_RATE_XY,
+        TRUE            ~ NA_real_
+      )
+    ) %>%
+    # Drop only the siteQC XX/XY columns by name - NOT ends_with("_XX"),
+    # which would also remove gnomADg_AF_*_XX / _XY that we keep on purpose.
+    select(
+      -MEDIAN_DP_XX, -MEDIAN_DP_XY,
+      -MEDIAN_GQ_XX, -MEDIAN_GQ_XY,
+      -AB_RATIO_XX, -AB_RATIO_XY,
+      -MISSINGNESS_RATE_XX, -MISSINGNESS_RATE_XY
+    )
+}
+
 #Add additional phenotypic annotation and calculate various flags to be used downstream for filtering
 gene_annotated <- gene_data %>%
   filter(
@@ -390,6 +411,7 @@ gene_annotated <- gene_data %>%
   ) %>%
   normalise_affection_status() %>%
   normalise_metadata() %>%
+  normalise_chrX_qc_metrics() %>%
   classify_variants_for_review()
 
 # Step 3 - count carriers on quality-passed calls keeping rare diseases participants in mind only
