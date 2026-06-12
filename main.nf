@@ -11,12 +11,6 @@ params.rd_phenotype               = null
 params.gms_phenotype              = null
 params.outdir                     = "results"
 
-//If a task fails, Nextflow stops launching new tasks but waits for
-//currently running tasks to finish before terminating the workflow.
-process {
-    errorStrategy = 'finish'
-}
-
 process FIND_SHARDS {
     input:
         val  row_index
@@ -44,7 +38,6 @@ process FIND_SHARDS {
         ${siteqc_shards}
     """
 }
-
 
 process RUN_GENE {
     container params.container
@@ -80,7 +73,6 @@ process RUN_GENE {
     """
 }
 
-
 process ANNOTATE_GENE {
     container params.container
 
@@ -110,7 +102,6 @@ process ANNOTATE_GENE {
     """
 }
 
-
 // Reads shard path text file and returns [names, files] tuple for staging
 def processShardFiles(channel) {
     return channel
@@ -119,7 +110,6 @@ def processShardFiles(channel) {
         .map      { line -> file(line.trim()) }
         .collect()
 }
-
 
 workflow {
 
@@ -161,7 +151,6 @@ workflow {
         file(params.gms_phenotype)
     )
 }
-
 
 workflow.onComplete {
     log.info "Pipeline completed : ${workflow.complete}"
