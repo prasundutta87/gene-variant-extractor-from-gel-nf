@@ -88,6 +88,7 @@ process ANNOTATE_GENE {
 
     output:
         path "*/*_for_review.tsv.gz"
+		path "*/*_for_review.parquet"
 
     script:
     """

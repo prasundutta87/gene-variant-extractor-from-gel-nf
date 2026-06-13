@@ -3,7 +3,6 @@ FROM rocker/tidyverse:4.5.2
 #   R, tidyverse, ggplot2, dplyr, gcc, make, perl, git, wget,
 #   ca-certificates, zlib1g-dev, libbz2-dev, liblzma-dev, libssl-dev,
 #   libcurl4-openssl-dev, libxml2-dev, font and graphics libraries and more.
-# We only install what is genuinely missing from the base image.
 
 LABEL maintainer="Prasun Dutta"
 LABEL description="Software environment for gene variant extraction pipeline"
@@ -64,10 +63,10 @@ RUN wget -q https://github.com/samtools/htslib/releases/download/${HTSLIB_VERSIO
 
 # ── Additional R packages via Posit Public Package Manager ───────────────────
 # Posit PPM provides pre-compiled binary packages for Ubuntu (noble = 24.04).
-# This is much faster than compiling from source — no waiting for duckdb
-# to compile. Same packages and versions as CRAN, just pre-built for Linux.
+# This is much faster than compiling from source. Same packages and versions 
+# as CRAN, just pre-built for Linux.
 RUN R -e "options(repos = c(CRAN='https://packagemanager.posit.co/cran/__linux__/noble/latest')); \
-          install.packages(c('argparser','duckdb','duckplyr','data.table','gt','ggpubr'))"
+          install.packages(c('argparser','duckdb','duckplyr','data.table','gt','ggpubr','arrow'))"
 
 # ── Verify all tools ──────────────────────────────────────────────────────────
 # Build fails here if anything is missing — better to know now than later.
@@ -77,7 +76,7 @@ RUN echo "=== Checking all tools ===" && \
     bedtools --version && \
     tabix --version 2>&1 | head -1 && \
     Rscript -e "library(tidyverse); library(duckplyr); library(data.table); \
-                library(argparser); library(gt); library(ggpubr); \
+                library(argparser); library(gt); library(ggpubr); library(arrow) \
                 cat('All R packages OK\n')" && \
     echo "=== All tools verified ==="
 

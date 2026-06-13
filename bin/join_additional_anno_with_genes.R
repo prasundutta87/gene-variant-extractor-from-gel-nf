@@ -27,6 +27,7 @@
 
 library(tidyverse)
 library(data.table)
+library(arrow)
 library(gt)
 library(ggpubr)
 options(scipen=999)
@@ -424,9 +425,16 @@ gene_for_review <- gene_annotated %>%
   left_join(gene_affection_counts, by = "variant_id")
 
 dir.create(gene_name, showWarnings = FALSE)
+
+tsv_path     <- paste0(gene_name, "/", tolower(gene_name), "_for_review.tsv.gz")
+parquet_path <- paste0(gene_name, "/", tolower(gene_name), "_for_review.parquet")
+ 
 fwrite(gene_for_review,
-       paste0(gene_name, "/", tolower(gene_name), "_for_review.tsv.gz"),
+       tsv_path,
        sep = "\t", row.names = FALSE, quote = FALSE, compress = "gzip")
+ 
+arrow::write_parquet(gene_for_review, parquet_path)
+
 
 # ── Output validation ─────────────────────────────────────────────────────────
 output_path <- paste0(gene_name, "/", tolower(gene_name), "_for_review.tsv.gz")
