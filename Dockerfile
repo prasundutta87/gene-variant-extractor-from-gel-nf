@@ -76,7 +76,7 @@ RUN echo "=== Checking all tools ===" && \
     bedtools --version && \
     tabix --version 2>&1 | head -1 && \
     Rscript -e "library(tidyverse); library(duckplyr); library(data.table); \
-                library(argparser); library(gt); library(ggpubr); library(arrow) \
+                library(argparser); library(gt); library(ggpubr); library(arrow); \
                 cat('All R packages OK\n')" && \
     echo "=== All tools verified ==="
 
