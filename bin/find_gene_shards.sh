@@ -1,4 +1,16 @@
 #!/bin/bash
+# find_gene_shards.sh
+#
+# Finds overlapping AggV3 VCF shards for each gene in the input BED file.
+# Called by Nextflow for each row in the genes BED file.
+#
+# NOTE: This script is not meant to be run directly.
+#       Run the pipeline via Nextflow:
+#           nextflow run main.nf --genes_bed my_genes.bed
+#
+#       Only --genes_bed needs to be specified - all other parameters
+#       (shard manifests, reference files, output directory) are set
+#       as defaults in nextflow.config.
 
 ROW_INDEX="$1"
 GENES_BED="$2"
