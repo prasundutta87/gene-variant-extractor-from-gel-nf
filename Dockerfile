@@ -10,9 +10,6 @@ LABEL description="Software environment for gene variant extraction pipeline"
 # ── System tools and bioinformatics dependencies ─────────────────────────────
 # bzip2        : needed to extract .tar.bz2 source archives (not in base image)
 # autoconf/automake : needed to run ./configure for htslib/bcftools compilation
-# bedtools     : genome arithmetic (intersect, merge, etc.)
-# samtools     : SAM/BAM manipulation
-# tabix        : index and query genomic files
 # libperl-dev  : Perl bindings for bcftools (enables -i/-e filtering with Perl)
 # libgsl0-dev  : GNU Scientific Library for bcftools polysomy command
 # Note: libcurl4-openssl-dev is already in rocker/tidyverse and provides
