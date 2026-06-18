@@ -12,6 +12,7 @@ params.gms_phenotype              = null
 params.outdir                     = "results"
 
 process FIND_SHARDS {
+    container params.container
     input:
         val  row_index
         path genes_bed
