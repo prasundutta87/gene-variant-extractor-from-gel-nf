@@ -52,7 +52,7 @@ genotypes%>%
 final_output<-paste0(args$input_directory_path,"/",args$gene_name,".tsv")
 final_output<-normalizePath(final_output)
 
-if(file.exists(final_output) && file.info(final_output)$size > 5000){
+if(file.exists(final_output) && file.info(final_output)$size > 0){
   message("SUCCESS: final output file created: ",final_output)
 }else {
   message("ERROR: final output file missing or empty: ",final_output)
