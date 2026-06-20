@@ -96,6 +96,9 @@ GMS_phenotype_data<-GMS_phenotype_data%>%mutate(participant_id=as.character(part
 annotate_with_participant_metadata <- function(gene_name) {
   result <- fread(paste0(gene_name, ".tsv"),na.strings = c("", "NA", "."))%>%
     rename(platekey = sample) %>%
+    # When a gene has no variants, fread reads all-NA columns as logical, which
+    # breaks na_if() and left_join(). This converts them back to character.
+    mutate(across(where(is.logical), as.character)) %>%
     mutate(
       DS = pmax(
         SpliceAI_pred_DS_AG,
@@ -125,7 +128,6 @@ annotate_with_participant_metadata <- function(gene_name) {
     )
   ) %>%
   mutate(
-    HGVSc = as.character(HGVSc),
     HGVSc = na_if(HGVSc, "-"),
     HGVSc_empty = is.na(HGVSc),
     SNV_with_valid_HGVSc = !HGVSc_empty &
