@@ -125,6 +125,7 @@ annotate_with_participant_metadata <- function(gene_name) {
     )
   ) %>%
   mutate(
+    HGVSc = as.character(HGVSc),
     HGVSc = na_if(HGVSc, "-"),
     HGVSc_empty = is.na(HGVSc),
     SNV_with_valid_HGVSc = !HGVSc_empty &
