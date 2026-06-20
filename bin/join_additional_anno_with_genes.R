@@ -96,9 +96,18 @@ GMS_phenotype_data<-GMS_phenotype_data%>%mutate(participant_id=as.character(part
 annotate_with_participant_metadata <- function(gene_name) {
   result <- fread(paste0(gene_name, ".tsv"),na.strings = c("", "NA", "."))%>%
     rename(platekey = sample) %>%
-    # When a gene has no variants, fread reads all-NA columns as logical, which
-    # breaks na_if() and left_join(). This converts them back to character.
+    # Empty genes give a header-only TSV, so fread reads the all-NA columns as
+    # logical and the maths downstream breaks. Convert those to character first,
+    # then force the QC and SpliceAI columns back to numeric. any_of() because
+    # autosomes and chrX don't have the same siteQC columns.
     mutate(across(where(is.logical), as.character)) %>%
+    mutate(across(any_of(c(
+    "SpliceAI_pred_DS_AG", "SpliceAI_pred_DS_DG",
+    "SpliceAI_pred_DS_AL", "SpliceAI_pred_DS_DL",
+    "medianDP", "medianGQ", "ABratio", "missingness_rate",
+    "MEDIAN_DP_XX", "MEDIAN_DP_XY", "MEDIAN_GQ_XX", "MEDIAN_GQ_XY",
+    "AB_RATIO_XX", "MISSINGNESS_RATE_XX", "MISSINGNESS_RATE_XY"
+    )), as.numeric)) %>%
     mutate(
       DS = pmax(
         SpliceAI_pred_DS_AG,
